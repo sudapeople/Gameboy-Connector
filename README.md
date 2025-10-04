@@ -10,6 +10,9 @@ GameBoy.kr 웹서버와 통신하는 마인크래프트 플러그인입니다.
 - **명령어 실행**: 웹서버에서 마인크래프트 명령어 실행
 - **서버 정보 수집**: 서버 상태, 성능, 설정 정보 전송
 - **대체문자 처리**: `<player>` 등의 대체문자를 실제 값으로 변환
+- **외부 IP 자동 수집**: 서버의 외부 IP 주소 자동 감지
+- **동적 프로토콜 버전**: 마인크래프트 버전에 따른 프로토콜 버전 자동 감지
+- **실제 TPS 측정**: Paper 서버에서 실제 TPS 측정
 
 ## 🔧 기술 스택
 
@@ -40,7 +43,7 @@ cd gameboy-connector
 
 1. `plugins/GameboyConnector/server-code.yml` 파일에서 서버 코드 확인
 2. GameBoy.kr 웹사이트에서 해당 서버 코드로 서버 등록
-3. API 키 설정 (필요시)
+3. 플러그인이 자동으로 서버 정보를 웹서버에 전송
 
 ## 📁 파일 구조
 
@@ -79,9 +82,8 @@ plugin:
   debug: false
   update_check: true
 
-# 웹서버 통신 설정
+# 웹서버 통신 설정 (API URL은 플러그인 내부에서 관리)
 web_server:
-  api_key: "your-api-key-here"
   update_interval: 60
 
 # 서버 정보 수집 설정
@@ -91,17 +93,9 @@ data_collection:
   collect_performance: true
   collect_plugins: true
 
-# 명령어 실행 설정
+# 명령어 실행 설정 (모든 명령어 허용)
 command_execution:
   max_command_length: 1000
-  allowed_commands:
-    - "roulette_reward"
-    - "pen"
-    - "give"
-    - "tp"
-    - "gamemode"
-    - "weather"
-    - "time"
 ```
 
 ### server-code.yml (자동 생성)
@@ -115,9 +109,8 @@ server:
   created_at: "2024-01-15T14:30:00Z"
   last_updated: "2024-01-15T14:30:00Z"
 
-# 웹서버 연동 설정
+# 웹서버 연동 설정 (보안상 API URL은 플러그인 내부 코드에서만 관리)
 web_server:
-  api_key: "your-api-key-here"
   update_interval: 60
 
 # 서버 정보 수집 설정
@@ -170,19 +163,43 @@ data_collection:
   "server_info": {
     "server_name": "My Server",
     "internal_ip": "192.168.1.100",
+    "external_ip": "203.0.113.1",
     "server_port": 25565,
     "motd": "Welcome to My Server!",
     "version": "1.20.4",
+    "protocol_version": 765,
     "max_players": 64,
     "online_players": 15,
     "tps": 20.0,
+    "server_uptime": 3600000,
     "memory_usage": {
-      "used": "2.5GB",
-      "total": "4GB",
+      "used": 2684354560,
+      "total": 4294967296,
       "percentage": 62.5
     },
     "java_version": "21.0.1",
-    "os_info": "Linux Ubuntu 22.04 LTS"
+    "os_info": "Linux Ubuntu 22.04 LTS",
+    "server_settings": {
+      "gamemode": "survival",
+      "difficulty": "normal",
+      "pvp_enabled": true,
+      "whitelist_enabled": false
+    },
+    "world_info": {
+      "world_name": "world",
+      "world_size": 1048576000,
+      "chunks_loaded": 1024
+    },
+    "plugins": [
+      {
+        "name": "GameboyConnector",
+        "version": "1.1.0",
+        "enabled": true
+      }
+    ],
+    "security_info": {
+      "op_count": 2
+    }
   }
 }
 ```
@@ -210,8 +227,9 @@ data_collection:
 
 - **API URL 보안**: API URL은 플러그인 내부 코드에서만 관리
 - **서버 코드 시스템**: 고유한 서버 식별 코드로 서버 구분
-- **인증**: API 키 기반 인증
-- **명령어 제한**: 허용된 명령어만 실행 가능
+- **인증**: 서버 코드 기반 인증 (API 키 불필요)
+- **명령어 실행**: 모든 명령어 실행 가능 (보안상 로그 제거)
+- **외부 IP 검증**: 사설 IP 필터링 및 유효성 검사
 
 ## 🐛 문제 해결
 
@@ -222,13 +240,14 @@ data_collection:
    - 서버가 Spigot/Paper 1.20.4 이상인지 확인
 
 2. **웹서버 통신 실패**
-   - `server-code.yml` 파일의 API 키 확인
+   - `server-code.yml` 파일의 서버 코드 확인
    - 웹서버가 정상 작동하는지 확인
    - 방화벽 설정 확인
+   - 외부 IP 조회 실패 시 네트워크 연결 확인
 
 3. **명령어 실행 실패**
-   - `config.yml`의 `allowed_commands` 목록 확인
    - 플레이어가 온라인인지 확인
+   - 명령어 구문이 올바른지 확인
 
 ### 로그 확인
 
@@ -246,6 +265,26 @@ data_collection:
 
 ---
 
-**버전**: 1.0.0  
-**마지막 업데이트**: 2024-01-15  
+**버전**: 1.1.0  
+**마지막 업데이트**: 2024-10-04  
 **호환성**: Java 17, Spigot/Paper 1.20.4+
+
+## 🆕 버전 1.1.0 업데이트 내용
+
+### 새로운 기능
+- ✅ **외부 IP 자동 수집**: 다중 IP 서비스 지원으로 안정적인 외부 IP 감지
+- ✅ **동적 프로토콜 버전**: 마인크래프트 버전에 따른 프로토콜 버전 자동 감지
+- ✅ **실제 TPS 측정**: Paper 서버에서 실제 TPS 측정 지원
+- ✅ **향상된 서버 정보**: 월드 정보, 플러그인 목록, 보안 정보 추가
+
+### 개선사항
+- ✅ **API 키 제거**: 서버 코드만으로 인증하는 간소화된 시스템
+- ✅ **보안 강화**: 명령어 실행 로그 제거, IP 유효성 검사 추가
+- ✅ **에러 처리 개선**: 네트워크 타임아웃 및 예외 처리 강화
+- ✅ **웹 API 동기화**: 모든 엔드포인트 완전 동기화
+
+### 호환성
+- ✅ **Java 17**: 완전 호환
+- ✅ **Minecraft 1.16~1.20.4**: 프로토콜 버전 자동 감지
+- ✅ **Paper 서버**: TPS 측정 지원
+- ✅ **Spigot 서버**: 기본 기능 지원
