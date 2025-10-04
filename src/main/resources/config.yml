@@ -1,0 +1,27 @@
+# GameBoy Connector 플러그인 설정
+
+# 플러그인 기본 설정
+plugin:
+  debug: false
+  update_check: true
+
+# 웹서버 통신 설정 (보안상 API URL은 플러그인 내부 코드에서만 관리)
+web_server:
+  update_interval: 60
+
+# 서버 정보 수집 설정
+data_collection:
+  collect_server_info: true
+  collect_player_list: true
+  collect_performance: true
+  collect_plugins: true
+
+# 명령어 실행 설정 (모든 명령어 허용)
+command_execution:
+  max_command_length: 1000
+
+# 로깅 설정
+logging:
+  log_commands: true
+  log_errors: true
+  log_performance: false
