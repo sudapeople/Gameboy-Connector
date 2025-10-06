@@ -235,12 +235,36 @@ public class WebServerCommunicator {
                         // 명령어 상태를 processing으로 변경
                         updateCommandStatus(queueId, "processing", null);
                         
-                        // 명령어 실행 (메인 스레드에서)
+                        // 특수 명령어 처리
+                        if (commandString.equals("REFRESH_PLAYERS")) {
+                            // 플레이어 목록 즉시 갱신
+                            try {
+                                List<PlayerInfo> players = plugin.getServer().getOnlinePlayers().stream()
+                                    .map(player -> {
+                                        PlayerInfo playerInfo = new PlayerInfo();
+                                        playerInfo.setPlayerId(player.getName());
+                                        playerInfo.setPlayerUuid(player.getUniqueId().toString());
+                                        return playerInfo;
+                                    })
+                                    .toList();
+
+                                updatePlayerList(players);
+                                updateCommandStatus(queueId, "completed", null);
+                                plugin.getPluginLogger().info("플레이어 목록 즉시 갱신 완료");
+                                continue;
+                            } catch (Exception e) {
+                                plugin.getPluginLogger().severe("플레이어 목록 갱신 실패: " + e.getMessage());
+                                updateCommandStatus(queueId, "failed", null);
+                                continue;
+                            }
+                        }
+
+                        // 일반 명령어 실행 (메인 스레드에서)
                         boolean success = false;
                         try {
                             // CompletableFuture를 사용해서 메인 스레드에서 실행하고 결과를 기다림
                             CompletableFuture<Boolean> future = new CompletableFuture<>();
-                            
+
                             plugin.getServer().getScheduler().runTask(plugin, () -> {
                                 try {
                                     boolean result = plugin.executeWebCommand(commandString, playerName);
@@ -250,10 +274,10 @@ public class WebServerCommunicator {
                                     future.complete(false);
                                 }
                             });
-                            
+
                             // 최대 5초 대기
                             success = future.get(5, TimeUnit.SECONDS);
-                            
+
                         } catch (Exception e) {
                             plugin.getPluginLogger().severe("명령어 실행 실패: " + e.getMessage());
                             success = false;
