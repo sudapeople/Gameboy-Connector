@@ -86,14 +86,18 @@ public class GameboyCommand {
     
     private void handleTest(CommandSender sender) {
         sender.sendMessage(ChatColor.YELLOW + "웹서버 연결 테스트 중...");
-        
+
         // 비동기로 테스트 실행
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             try {
-                // 간단한 테스트 요청 전송
-                plugin.getCommunicator().sendServerShutdown();
+                // testConnection() 메서드 호출
+                boolean success = plugin.getCommunicator().testConnection();
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    sender.sendMessage(ChatColor.GREEN + "웹서버 연결 테스트가 완료되었습니다.");
+                    if (success) {
+                        sender.sendMessage(ChatColor.GREEN + "웹서버 연결 테스트가 완료되었습니다.");
+                    } else {
+                        sender.sendMessage(ChatColor.RED + "웹서버 연결 테스트 실패");
+                    }
                 });
             } catch (Exception e) {
                 plugin.getServer().getScheduler().runTask(plugin, () -> {
