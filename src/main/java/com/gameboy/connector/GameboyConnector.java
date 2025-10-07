@@ -530,17 +530,13 @@ public class GameboyConnector extends JavaPlugin {
             String executedCommand = command.replace("<player>", playerName);
             result.setExecutedCommand(executedCommand);
 
-            // 명령어 결과 캡처를 위한 커스텀 CommandSender 생성
-            com.gameboy.connector.utils.CommandResultCapture resultCapture =
-                new com.gameboy.connector.utils.CommandResultCapture();
+            // 콘솔에서 명령어 실행
+            boolean success = getServer().dispatchCommand(getServer().getConsoleSender(), executedCommand);
 
-            // 마인크래프트 명령어 실행 (결과 캡처)
-            boolean success = getServer().dispatchCommand(resultCapture, executedCommand);
-
-            // 결과 저장
+            // 결과 저장 (현재는 출력 캡처 없이 성공/실패만)
             result.setSuccess(success);
-            result.setOutput(resultCapture.getMessagesAsString());
-            result.setOutputLines(resultCapture.getMessages());
+            result.setOutput(success ? "명령어 실행 완료" : "명령어 실행 실패");
+            result.setOutputLines(new ArrayList<>());
 
             return result;
 
