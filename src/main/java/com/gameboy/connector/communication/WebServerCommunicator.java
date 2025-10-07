@@ -260,37 +260,44 @@ public class WebServerCommunicator {
                         }
 
                         // 일반 명령어 실행 (메인 스레드에서)
-                        boolean success = false;
+                        GameboyConnector.CommandExecutionResult cmdResult = null;
                         try {
                             // CompletableFuture를 사용해서 메인 스레드에서 실행하고 결과를 기다림
-                            CompletableFuture<Boolean> future = new CompletableFuture<>();
+                            CompletableFuture<GameboyConnector.CommandExecutionResult> future = new CompletableFuture<>();
 
                             plugin.getServer().getScheduler().runTask(plugin, () -> {
                                 try {
-                                    boolean result = plugin.executeWebCommand(commandString, playerName);
+                                    GameboyConnector.CommandExecutionResult result = plugin.executeWebCommand(commandString, playerName);
                                     future.complete(result);
                                 } catch (Exception e) {
                                     plugin.getPluginLogger().severe("명령어 실행 중 오류: " + e.getMessage());
-                                    future.complete(false);
+                                    GameboyConnector.CommandExecutionResult errorResult = new GameboyConnector.CommandExecutionResult();
+                                    errorResult.setSuccess(false);
+                                    errorResult.setOutput("오류: " + e.getMessage());
+                                    future.complete(errorResult);
                                 }
                             });
 
                             // 최대 5초 대기
-                            success = future.get(5, TimeUnit.SECONDS);
+                            cmdResult = future.get(5, TimeUnit.SECONDS);
 
                         } catch (Exception e) {
                             plugin.getPluginLogger().severe("명령어 실행 실패: " + e.getMessage());
-                            success = false;
+                            cmdResult = new GameboyConnector.CommandExecutionResult();
+                            cmdResult.setSuccess(false);
+                            cmdResult.setOutput("타임아웃 또는 오류: " + e.getMessage());
                         }
-                        
+
                         // 실행 결과에 따라 상태 업데이트
                         JsonObject executionResult = new JsonObject();
-                        executionResult.addProperty("success", success);
+                        executionResult.addProperty("success", cmdResult.isSuccess());
                         executionResult.addProperty("player_name", playerName);
                         executionResult.addProperty("command", commandString);
+                        executionResult.addProperty("executed_command", cmdResult.getExecutedCommand());
+                        executionResult.addProperty("output", cmdResult.getOutput());
                         executionResult.addProperty("execution_time", Instant.now().toString());
-                        
-                        String status = success ? "completed" : "failed";
+
+                        String status = cmdResult.isSuccess() ? "completed" : "failed";
                         updateCommandStatus(queueId, status, executionResult);
                     }
                 }

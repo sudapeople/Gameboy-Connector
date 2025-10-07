@@ -519,23 +519,59 @@ public class GameboyConnector extends JavaPlugin {
     }
     
     /**
-     * 웹서버에서 명령어 실행 요청 받기 (대체문자 처리 포함)
+     * 웹서버에서 명령어 실행 요청 받기 (대체문자 처리 포함, 결과 캡처)
      */
-    public boolean executeWebCommand(String command, String playerName) {
+    public CommandExecutionResult executeWebCommand(String command, String playerName) {
+        CommandExecutionResult result = new CommandExecutionResult();
+        result.setSuccess(false);
+
         try {
             // <player> 대체문자를 실제 플레이어명으로 변환
             String executedCommand = command.replace("<player>", playerName);
-            
-            // 마인크래프트 명령어 그대로 실행
-            getServer().dispatchCommand(getServer().getConsoleSender(), executedCommand);
-            // 보안상 명령어 실행 로그 제거
-            
-            return true;
-            
+            result.setExecutedCommand(executedCommand);
+
+            // 명령어 결과 캡처를 위한 커스텀 CommandSender 생성
+            com.gameboy.connector.utils.CommandResultCapture resultCapture =
+                new com.gameboy.connector.utils.CommandResultCapture();
+
+            // 마인크래프트 명령어 실행 (결과 캡처)
+            boolean success = getServer().dispatchCommand(resultCapture, executedCommand);
+
+            // 결과 저장
+            result.setSuccess(success);
+            result.setOutput(resultCapture.getMessagesAsString());
+            result.setOutputLines(resultCapture.getMessages());
+
+            return result;
+
         } catch (Exception e) {
             logger.severe("명령어 실행 실패: " + e.getMessage());
-            return false;
+            result.setSuccess(false);
+            result.setOutput("오류: " + e.getMessage());
+            return result;
         }
+    }
+
+    /**
+     * 명령어 실행 결과를 담는 클래스
+     */
+    public static class CommandExecutionResult {
+        private boolean success;
+        private String executedCommand;
+        private String output;
+        private List<String> outputLines;
+
+        public boolean isSuccess() { return success; }
+        public void setSuccess(boolean success) { this.success = success; }
+
+        public String getExecutedCommand() { return executedCommand; }
+        public void setExecutedCommand(String executedCommand) { this.executedCommand = executedCommand; }
+
+        public String getOutput() { return output; }
+        public void setOutput(String output) { this.output = output; }
+
+        public List<String> getOutputLines() { return outputLines; }
+        public void setOutputLines(List<String> outputLines) { this.outputLines = outputLines; }
     }
     
     /**
