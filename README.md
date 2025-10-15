@@ -278,7 +278,7 @@ GET /pending-commands.php?server_code=GB-A1B2-C3D4-E5F6
 
 ## 📞 지원
 
-- **개발자**: GameBoy.kr 개발팀
+- **개발자**: 수다
 - **이메일**: sudapeopletv@gmail.com
 - **웹사이트**: https://gameboy.kr
 

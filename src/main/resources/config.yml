@@ -8,6 +8,14 @@ plugin:
 # 웹서버 통신 설정 (보안상 API URL은 플러그인 내부 코드에서만 관리)
 web_server:
   update_interval: 60
+  # 연결 타임아웃 설정 (초)
+  connect_timeout: 3  # 연결 시도 타임아웃
+  request_timeout: 5  # 요청 응답 타임아웃
+  # Circuit Breaker 설정
+  failure_threshold: 3  # 연속 실패 임계값
+  circuit_reset_time: 30  # Circuit 재시도 대기 시간 (초)
+  backoff_base_time: 5  # 백오프 기본 시간 (초)
+  max_backoff_time: 60  # 최대 백오프 시간 (초)
 
 # 서버 정보 수집 설정
 data_collection:
